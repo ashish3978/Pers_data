@@ -6,8 +6,8 @@ const {PartySchema} = require('../models/partySchema'); // Adjust the path as ne
 // const State = require('../models/State'); // Adjust the path as necessary
 
 const partyAdd = async (req, res) => {
-    const encryptedData = req.headers['x-encrypted-data']; // Ensure correct header key
-    const iv = req.headers['x-iv']; // Ensure correct header key
+    const encryptedData = req.headers['x-encrypted-data'];
+    const iv = req.headers['x-iv'];
 
     try {
         if (!encryptedData || !iv) {
@@ -16,13 +16,26 @@ const partyAdd = async (req, res) => {
 
         const decryptedData = decrypt(encryptedData, iv);
         const userData = JSON.parse(decryptedData);
-        
-        const userDbConnection = getUserDatabaseConnection(`db_${userData.username}`); // Use the username to get the correct database
+
+        const userDbConnection = getUserDatabaseConnection(`db_${userData.username}`);
 
         const Party = userDbConnection.model('Party', PartySchema);
 
+        const {
+            partyName,
+            MobileNo,
+            GSTIN,
+            GSTType,
+            AsOfDate,
+            BillingAddress,
+            Email,
+            ShippingAddress,
+            OpeningBalance,
+            creditLimitToggle,
+            creditLimit
+        } = req.body;
+
         const newParty = new Party({
-            partyId,
             partyName,
             MobileNo,
             GSTIN,
@@ -39,7 +52,7 @@ const partyAdd = async (req, res) => {
         res.status(201).json(savedParty);
     } catch (error) {
         console.error('Error adding party:', error);
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: 'An error occurred while adding the party' });
     }
 };
 

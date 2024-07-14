@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const PartySchema = new Schema({
-    partyId: {type: Number,unique: true},
     partyName: {type: String, required: true},
     MobileNo: Number,
     GSTIN: String,

@@ -71,18 +71,19 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
     const { username, password } = req.body;
+    let masterDbConnection, newDbConnection;
 
     try {
-        const masterDbConnection = mongoose.createConnection(masterDbUri);
+        masterDbConnection = mongoose.createConnection(masterDbUri);
         const MasterModel = masterDbConnection.model('MasterModel', MasterSchema);
- 
+
         const masterEntry = await MasterModel.findOne({ databaseName: `db_${username}` });
         if (!masterEntry) {
             return res.status(404).json({ message: 'User not found' });
         }
 
         const newDbUri = `mongodb://localhost:27017/${masterEntry.databaseName}`;
-        const newDbConnection = mongoose.createConnection(newDbUri);
+        newDbConnection = mongoose.createConnection(newDbUri);
         const User = newDbConnection.model('User', UserSchema);
         const user = await User.findOne({ username });
 
@@ -97,22 +98,25 @@ const loginUser = async (req, res) => {
 
         // Encrypt user data to return
         const userData = { username: user.username, email: user.email }; // Adjust as needed
-        const encryptedData = encrypt(JSON.stringify(userData));
+        const { iv, encryptedData } = encrypt(JSON.stringify(userData));
 
         res.status(200).json({ 
             message: 'Login successful', 
-            encryptedData: encryptedData.encryptedData,
-            iv: encryptedData.iv
+            encryptedData,
+            iv
         });
     } catch (error) {
         console.error('Error logging in user:', error);
         res.status(500).json({ message: 'Server error', error });
+    } finally {
+        if (masterDbConnection) {
+            masterDbConnection.close();
+        }
+        if (newDbConnection) {
+            newDbConnection.close();
+        }
     }
 };
-
-
-
-
 
 
 module.exports = {
