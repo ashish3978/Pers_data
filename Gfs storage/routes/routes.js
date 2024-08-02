@@ -13,6 +13,7 @@ const saleController = require('../controllers/saleController');
 
 router.post('/itemAdd', itemController.itemAdd);
 router.post('/partyAdd', partyController.partyAdd);
+router.post('/partyFill', partyController.partyList);
 router.post('/saleadd', saleController.saleAdd);
 const Company = require('../models/companySchema');
 

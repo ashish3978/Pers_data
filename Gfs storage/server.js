@@ -13,17 +13,8 @@ const port = process.env.PORT || 3000;
 
 const { encrypt, decrypt } = require('./utils/encryptionUtil');
 
-// Example data
-const dataToEncrypt = "Sensitive User Data";
 
-// Encrypt the data
-const encrypted = encrypt(dataToEncrypt);
-console.log('Encrypted:', encrypted);
-
-// Decrypt the data
-const decrypted = decrypt(encrypted.encryptedData, encrypted.iv);
-console.log('Decrypted:', decrypted);
-
+  
 // Middleware
 app.use(express.json());
 app.use(bodyParser.json());

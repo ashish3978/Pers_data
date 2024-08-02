@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const connections = {}; // Cache for database connections
+const connections = {};
 
 const getUserDatabaseConnection = (databaseName) => {
     console.log(databaseName);
