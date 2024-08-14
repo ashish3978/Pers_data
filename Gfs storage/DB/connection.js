@@ -9,7 +9,7 @@ const getUserDatabaseConnection = (databaseName) => {
     }
 
     const uri = `mongodb://localhost:27017/${databaseName}`;
-    const connection = mongoose.createConnection(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const connection = mongoose.createConnection(uri);
 
     connection.on('error', console.error.bind(console, `MongoDB connection error for ${databaseName}:`));
     connection.once('open', () => {

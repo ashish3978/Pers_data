@@ -1,38 +1,30 @@
-// controllers/partyController.js
-const { decrypt } = require('../utils/encryptionUtil'); // Adjust path as necessary 
+const { decrypt } = require('../utils/encryptionUtil'); 
 const getUserDatabaseConnection = require('../DB/connection');
-const { PartySchema } = require('../models/partySchema'); // Adjust the path as necessary
-// const User = require('../models/User'); // Adjust the path as necessary
-// const State = require('../models/State'); // Adjust the path as necessary
+const { PartySchema } = require('../models/partySchema');
+const moment = require('moment-timezone'); 
 
 const partyAdd = async (req, res) => {
     const parseDateTime = (dateTimeString) => {
-        const [datePart, timePart] = dateTimeString.split(' ');
+        if (!dateTimeString) {
+            throw new Error('Date time string is not provided');
+        }
+
+        const [datePart, timePart = ''] = dateTimeString.split(' ');
         const [day, month, year] = datePart.split('/').map(Number);
+        const [hours = 0, minutes = 0, seconds = 0] = timePart.split(':').map(Number);
 
-        // Use current time if timePart is not provided
         const now = new Date();
-        const [hours = now.getHours(), minutes = now.getMinutes(), seconds = now.getSeconds(), milliseconds = now.getMilliseconds()] =
-            (timePart || `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:${now.getMilliseconds()}}`).split(':').map(Number);
+        const localDate = moment.tz({ year, month: month - 1, day, hour: hours, minute: minutes, second: seconds }, 'Asia/Kolkata');
 
-        // Surat, Gujarat (GMT+5:30) offset in milliseconds
-        const localOffsetMillis = 390 * 60 * 1000; // 5 hours 30 minutes
+        const utcDate = localDate.clone().utc().toDate();
 
-        // Create a local Date object
-        const localDate = new Date(year, month - 1, day, hours, minutes, seconds);
-
-        // Convert local time to UTC
-        const utcDate = new Date(localDate.getTime() - localOffsetMillis);
-
-        // Log parsed values for debugging
         console.log('Parsed Date:', { year, month, day });
         console.log('Parsed Time:', { hours, minutes, seconds });
-        console.log('Local Date Object:', localDate);
+        console.log('Local Date Object:', localDate.format());
         console.log('UTC Date Object:', utcDate);
 
-        return utcDate;
+        return localDate;
     };
-
 
     const encryptedData = req.headers['x-encrypted-data'];
     const iv = req.headers['x-iv'];
@@ -46,7 +38,6 @@ const partyAdd = async (req, res) => {
         const userData = JSON.parse(decryptedData);
 
         const userDbConnection = getUserDatabaseConnection(`db_${userData.username}`);
-
         const Party = userDbConnection.model('Party', PartySchema);
 
         const {
@@ -63,10 +54,12 @@ const partyAdd = async (req, res) => {
             creditLimit
         } = req.body;
 
-        // Convert AsOfDate to a Date object
+        if (!AsOfDate) {
+            return res.status(400).json({ message: 'AsOfDate is required' });
+        }
+
         const dateTimeObject = parseDateTime(AsOfDate);
 
-        // Log the Date object before saving
         console.log('Date-Time Object to Save:', dateTimeObject);
 
         const newParty = new Party({
@@ -74,7 +67,7 @@ const partyAdd = async (req, res) => {
             MobileNo,
             GSTIN,
             GSTType,
-            AsOfDate: dateTimeObject,
+            AsOfDate: new Date(dateTimeObject),
             BillingAddress,
             Email,
             ShippingAddress,
@@ -91,10 +84,9 @@ const partyAdd = async (req, res) => {
 };
 
 const partyList = async (req, res) => {
-    const { partyName } = req.body; // Fetch the body parameter 'partyName'
+    const { partyName } = req.body;
 
     try {
-        // Example: Retrieve user database connection based on authenticated user
         const encryptedData = req.headers['x-encrypted-data'];
         const iv = req.headers['x-iv'];
 
@@ -105,14 +97,11 @@ const partyList = async (req, res) => {
         const decryptedData = decrypt(encryptedData, iv);
         const userData = JSON.parse(decryptedData);
         const userDbConnection = getUserDatabaseConnection(`db_${userData.username}`);
-
         const Party = userDbConnection.model('Party', PartySchema);
 
-        // Fetch all party data if partyName is 0
         if (partyName === 0) {
             const parties = await Party.find({});
 
-            // Function to format date as DD/MM/YYYY
             const formatDate = (date) => {
                 const day = String(date.getDate()).padStart(2, '0');
                 const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -120,13 +109,11 @@ const partyList = async (req, res) => {
                 return `${day}/${month}/${year}`;
             };
 
-            // Format the AsOfDate field
             const formattedParties = parties.map(party => ({
                 ...party.toObject(),
-                AsOfDate: formatDate(party.AsOfDate) // Format date as DD/MM/YYYY
+                AsOfDate: formatDate(party.AsOfDate)
             }));
 
-            // Log each AsOfDate in the desired format
             formattedParties.forEach(party => {
                 console.log(party.AsOfDate);
             });
@@ -140,8 +127,6 @@ const partyList = async (req, res) => {
         res.status(500).json({ message: 'An error occurred while fetching party data' });
     }
 };
-
-
 
 module.exports = {
     partyAdd,

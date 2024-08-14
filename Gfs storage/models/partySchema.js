@@ -6,7 +6,7 @@ const PartySchema = new Schema({
     MobileNo: Number,
     GSTIN: String,
     GSTType:String,
-    AsOfDate: Date,
+    AsOfDate: {type: Date, timezone: String},
     BillingAddress: String,
     creditLimit: {type: Number,default: 0},
     Email: String,
